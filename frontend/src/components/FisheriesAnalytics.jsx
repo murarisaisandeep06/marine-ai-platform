@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
-
+import api from "../api";
 import {
   BarChart,
   Bar,
@@ -26,24 +26,24 @@ function FisheriesAnalytics() {
   const [captureSearch,setCaptureSearch] = useState("")
   const [speciesSearch,setSpeciesSearch] = useState("")
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    axios.get("http://localhost:8000/fisheries/fisheries/capture")
-      .then(res=>setCapture(res.data))
+  api.get("/fisheries/fisheries/capture")
+    .then(res => setCapture(res.data));
 
-    axios.get("http://localhost:8000/fisheries/fisheries/species")
-      .then(res=>setSpecies(res.data))
+  api.get("/fisheries/fisheries/species")
+    .then(res => setSpecies(res.data));
 
-    axios.get("http://localhost:8000/fisheries/fisheries/species-value")
-      .then(res=>setSpeciesValue(res.data))
+  api.get("/fisheries/fisheries/species-value")
+    .then(res => setSpeciesValue(res.data));
 
-    axios.get("http://localhost:8000/fisheries/fisheries/top-species")
-      .then(res=>setTopSpecies(res.data))
+  api.get("/fisheries/fisheries/top-species")
+    .then(res => setTopSpecies(res.data));
 
-    axios.get("http://localhost:8000/fisheries/fisheries/yearly-catch")
-      .then(res=>setYearTrend(res.data))
+  api.get("/fisheries/fisheries/yearly-catch")
+    .then(res => setYearTrend(res.data));
 
-  },[])
+}, []);
 
 
   const filteredCapture = capture.filter(c =>
@@ -284,8 +284,7 @@ function FisheriesAnalytics() {
 
             if(value.length >= 2){
 
-                axios
-                .get(`http://localhost:8000/fisheries/fisheries/species-search?q=${value}`)
+                api.get(`/fisheries/fisheries/species-search?q=${value}`)
                 .then(res=>{
                     setSpeciesValue(res.data)
                 })

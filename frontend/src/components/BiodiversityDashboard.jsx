@@ -10,14 +10,14 @@ const [species,setSpecies] = useState([])
 const [families,setFamilies] = useState([])
 const [search,setSearch] = useState("")
 const [filtered,setFiltered] = useState([])
-
+const API_URL = import.meta.env.VITE_API_URL;
 useEffect(()=>{
 
-fetch("http://localhost:8000/biodiversity/biodiversity/hotspots")
+fetch(`${API_URL}/biodiversity/biodiversity/hotspots`)
 .then(res=>res.json())
 .then(data=>setHotspots(data))
 
-fetch("http://localhost:8000/biodiversity/biodiversity/species")
+fetch(`${API_URL}/biodiversity/biodiversity/species`)
 .then(res=>res.json())
 .then(data=>{
 

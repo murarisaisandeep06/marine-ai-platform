@@ -8,7 +8,7 @@ import FisheriesMap from "./components/FisheriesMap"
 import OceanGlobe from "./components/OceanGlobe"
 import FisheriesAnalytics from "./components/FisheriesAnalytics"
 import BiodiversityDashboard from "./components/BiodiversityDashboard"
-
+import api from "./api";
 import {
 LineChart,
 Line,
@@ -40,61 +40,45 @@ const [biodiversityCount,setBiodiversityCount] = useState(0)
 const [countries,setCountries] = useState(0)
 const [effort,setEffort] = useState(0)
 
+
 /* ================= FETCH DATA ================= */
 
-useEffect(()=>{
+useEffect(() => {
+  api.get("/ocean/stats")
+    .then(res => {
+      setStats(res.data);
+      setOceanCount(res.data.total_records);
+    });
+}, []);
 
-axios
-.get("http://localhost:8000/ocean/stats")
-.then(res=>{
-setStats(res.data)
-setOceanCount(res.data.total_records)
-})
-
-},[])
-
-useEffect(()=>{
-
-axios
-.get("http://localhost:8000/ocean/?min_lat=-40&max_lat=30&min_lon=20&max_lon=120&limit=5000")
-.then(res=>setOceanData(res.data))
-
-},[])
+useEffect(() => {
+  api.get("/ocean/?min_lat=-40&max_lat=30&min_lon=20&max_lon=120&limit=5000")
+    .then(res => setOceanData(res.data));
+}, []);
 
 /* fisheries records */
 
-useEffect(()=>{
-
-axios
-.get("http://localhost:8000/fisheries/fisheries/total-records")
-.then(res=>setFisheriesCount(res.data.total))
-
-},[])
+useEffect(() => {
+  api.get("/fisheries/fisheries/total-records")
+    .then(res => setFisheriesCount(res.data.total));
+}, []);
 
 /* biodiversity records */
 
-useEffect(()=>{
+useEffect(() => {
+  api.get("/biodiversity/biodiversity/total-records")
+    .then(res => setBiodiversityCount(res.data.total));
+}, []);
 
-axios
-.get("http://localhost:8000/biodiversity/biodiversity/total-records")
-.then(res=>setBiodiversityCount(res.data.total))
+useEffect(() => {
+  api.get("/fisheries/fisheries/countries-count")
+    .then(res => setCountries(res.data.count));
+}, []);
 
-},[])
-
-useEffect(()=>{
-
-axios.get("http://localhost:8000/fisheries/fisheries/countries-count")
-.then(res=>setCountries(res.data.count))
-
-},[])
-
-useEffect(()=>{
-
-axios
-.get("http://localhost:8000/fisheries/fisheries/total-effort")
-.then(res=>setEffort(res.data.effort))
-
-},[])
+useEffect(() => {
+  api.get("/fisheries/fisheries/total-effort")
+    .then(res => setEffort(res.data.effort));
+}, []);
 
 /* ================= TOTAL PLATFORM RECORDS ================= */
 

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
-
+import api from "../api";
 function OceanQueryBox() {
   const [lat, setLat] = useState("");
   const [lon, setLon] = useState("");
   const [result, setResult] = useState("");
-
+  
   const fetchPointData = async () => {
     if (!lat || !lon) {
       setResult("Please enter both latitude and longitude.");
@@ -13,7 +13,7 @@ function OceanQueryBox() {
     }
 
     try {
-      const res = await axios.get("http://localhost:8000/ocean/", {
+      const res = await api.get("/ocean/", {
         params: { lat, lon },
       });
 

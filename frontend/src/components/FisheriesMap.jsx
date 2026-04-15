@@ -6,7 +6,6 @@ import FleetStats from "./FleetStats"
 import RadarLayer from "./RadarLayer"
 import HeatLegend from "./HeatLegend"
 import MapLegend from "./MapLegend"
-
 /* ================= HEATMAP LAYER ================= */
 
 function HeatLayer({ points }) {
@@ -192,10 +191,11 @@ function FisheriesMap() {
 
   const [points,setPoints] = useState([])
   const [year,setYear] = useState(2023)
+  const API_URL = import.meta.env.VITE_API_URL;
 
     useEffect(()=>{
 
-    fetch(`http://localhost:8000/fisheries/fisheries/fishing-effort?year=${year}`)
+    fetch(`${API_URL}/fisheries/fisheries/fishing-effort?year=${year}`)
     .then(res=>res.json())
     .then(data=>setPoints(data))
 

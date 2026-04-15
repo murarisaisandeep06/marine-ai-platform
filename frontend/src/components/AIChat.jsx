@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import chatApi from "../chatApi";
 
 function AIChat() {
   const [question, setQuestion] = useState("");
@@ -15,8 +16,7 @@ function AIChat() {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:8001/chat",
+      const res = await chatApi.post("/chat",
         {
             question: question,
             session_id: "marine-session-1", 

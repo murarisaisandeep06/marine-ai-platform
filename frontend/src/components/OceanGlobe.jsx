@@ -8,12 +8,12 @@ function OceanGlobe(){
   const [points,setPoints] = useState([])
   const [arcs,setArcs] = useState([])
   const [sensors,setSensors] = useState([])
-
+  const API_URL = import.meta.env.VITE_API_URL;
   const HEIGHT = 800
 
   useEffect(()=>{
 
-    fetch("http://localhost:8000/fisheries/fisheries/fishing-effort")
+    fetch(`${API_URL}/fisheries/fisheries/fishing-effort`)
     .then(res=>res.json())
     .then(data=>{
 
