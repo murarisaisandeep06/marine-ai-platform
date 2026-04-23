@@ -78,9 +78,7 @@ def get_biodiversity_total(db: Session = Depends(get_db)):
     result = db.execute(text("""
         SELECT
         (SELECT COUNT(*) FROM biodiversity_data) +
-        (SELECT COUNT(*) FROM marine_biodiversity) +
-        (SELECT COUNT(*) FROM marine_biodiversity_raw) +
-        (SELECT COUNT(*) FROM temp_biodiversity_raw)
+        (SELECT COUNT(*) FROM marine_biodiversity)
     """))
 
     total = result.scalar()

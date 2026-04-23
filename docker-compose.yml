@@ -46,6 +46,7 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
+      - chatbot-service
     restart: always
     volumes:
     - ./data:/data 
