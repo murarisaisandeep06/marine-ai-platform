@@ -24,7 +24,6 @@ app.include_router(fisheries.router, prefix="/fisheries", tags=["Fisheries"])
 app.include_router(biodiversity.router, prefix="/biodiversity", tags=["Biodiversity"])
 
 @app.post("/chat")
-@app.post("/chat")
 async def chat_proxy(request: Request):
     try:
         body = await request.json()
