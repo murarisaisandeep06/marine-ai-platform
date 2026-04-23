@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
-import openai
+from openai import OpenAI
 import os
 
 # ======================================
@@ -23,7 +23,7 @@ app.add_middleware(
 # ENV CONFIG
 # ======================================
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 DATABASE_URL = os.getenv("DATABASE_URL")  # 👈 set in Render
 if not DATABASE_URL:
@@ -54,7 +54,7 @@ class ChatRequest(BaseModel):
 # ======================================
 
 def ask_llm(prompt):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a marine science AI assistant and SQL expert."},
