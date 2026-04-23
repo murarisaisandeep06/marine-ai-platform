@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
-from openai import OpenAI
+import google.generativeai as genai
 import os
 
 # ======================================
@@ -23,7 +23,8 @@ app.add_middleware(
 # ENV CONFIG
 # ======================================
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 DATABASE_URL = os.getenv("DATABASE_URL")  # 👈 set in Render
 if not DATABASE_URL:
@@ -54,15 +55,11 @@ class ChatRequest(BaseModel):
 # ======================================
 
 def ask_llm(prompt):
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a marine science AI assistant and SQL expert."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3
-    )
-    return response["choices"][0]["message"]["content"]
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"AI error: {str(e)}"
 
 # ======================================
 # GENERATE SQL
@@ -94,11 +91,7 @@ fish_capture("Country Name En", "2023 value")
 Return SQL only.
 """
     sql = ask_llm(prompt)
-
-    sql = sql.replace("```sql", "").replace("```", "").strip()
-    sql = sql.split("\n")[0]
-
-    return sql
+    return clean_sql(sql)
 
 # ======================================
 # CHAT ENDPOINT
