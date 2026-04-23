@@ -48,8 +48,8 @@ useEffect(() => {
     .then(res => {
       setStats(res.data);
       setOceanCount(res.data.total_records);
-    });
-  .catch(err => console.log("Stats error:", err));
+    })
+    .catch(err => console.log("Stats error:", err));
 }, []);
 
 useEffect(() => {
