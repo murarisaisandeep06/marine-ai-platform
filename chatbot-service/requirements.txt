@@ -6,3 +6,4 @@ faiss-cpu
 sentence-transformers
 sqlalchemy
 psycopg2-binary
+openai
