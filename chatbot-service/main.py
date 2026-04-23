@@ -53,24 +53,26 @@ class ChatRequest(BaseModel):
 # ======================================
 
 def ask_llm(prompt):
+    API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-base"
+
+    headers = {
+        "Authorization": f"Bearer {os.getenv('HF_API_KEY')}"
+    }
+
+    payload = {
+        "inputs": prompt,
+        "parameters": {"max_new_tokens": 200}
+    }
+
     try:
-        API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
-
-        headers = {
-            "Authorization": f"Bearer {os.getenv('HF_API_KEY')}"
-        }
-
-        payload = {
-            "inputs": prompt,
-            "parameters": {"max_new_tokens": 200}
-        }
-
         response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
 
         data = response.json()
 
-        # ❗ Handle model loading
+        # 🔁 Retry if model loading
         if isinstance(data, dict) and "error" in data:
+            if "loading" in data["error"].lower():
+                return "Model loading, try again in 5 seconds."
             return ""
 
         if isinstance(data, list):
@@ -78,7 +80,8 @@ def ask_llm(prompt):
 
         return str(data)
 
-    except Exception:
+    except Exception as e:
+        print("HF ERROR:", str(e))
         return "AI unavailable"
         
 # ======================================
