@@ -53,7 +53,7 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  api.get("/ocean&limit=5000")
+  api.get("/ocean?limit=5000")
     .then(res => setOceanData(res.data));
 }, []);
 
