@@ -19,9 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ocean.router, prefix="/ocean", tags=["Ocean"])
-app.include_router(fisheries.router, prefix="/fisheries", tags=["Fisheries"])
-app.include_router(biodiversity.router, prefix="/biodiversity", tags=["Biodiversity"])
+app.include_router(ocean.router)
+app.include_router(fisheries.router)
+app.include_router(biodiversity.router)
 
 @app.post("/chat")
 async def chat_proxy(request: Request):
