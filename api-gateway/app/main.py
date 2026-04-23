@@ -24,25 +24,44 @@ app.include_router(fisheries.router, prefix="/fisheries", tags=["Fisheries"])
 app.include_router(biodiversity.router, prefix="/biodiversity", tags=["Biodiversity"])
 
 @app.post("/chat")
+@app.post("/chat")
 async def chat_proxy(request: Request):
     try:
         body = await request.json()
     except:
         body = {}
 
-    try:
-        chatbot_payload = {
-            "question": body.get("question", "string"),
-            "session_id": body.get("session_id", "string")
-        }
+    chatbot_payload = {
+        "question": body.get("question", ""),
+        "session_id": body.get("session_id", "default")
+    }
 
+    try:
         response = requests.post(
             "https://marine-chatbot.onrender.com/chat",
             json=chatbot_payload,
-            timeout=10
+            timeout=30   # ⬅️ increase timeout
         )
 
-        return response.json()
+        # ✅ DEBUG LOGS (important)
+        print("STATUS:", response.status_code)
+        print("TEXT:", response.text)
+
+        # ✅ SAFE JSON PARSE
+        if response.status_code == 200:
+            try:
+                return response.json()
+            except:
+                return {"error": "Invalid JSON from chatbot", "raw": response.text}
+
+        return {
+            "error": "Chatbot returned error",
+            "status": response.status_code,
+            "raw": response.text
+        }
 
     except Exception as e:
-        return {"error": str(e)}
+        return {
+            "error": "Chatbot request failed",
+            "details": str(e)
+        }
