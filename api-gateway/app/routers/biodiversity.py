@@ -6,7 +6,7 @@ from app.database import engine, get_db
 router = APIRouter(prefix="/biodiversity", tags=["Biodiversity"])
 
 
-# 🌍 Species locations for map
+# 🌍 Species locations for map (FAST)
 @router.get("/species")
 def get_species():
     with engine.connect() as conn:
@@ -21,15 +21,15 @@ def get_species():
                 country
             FROM marine_biodiversity
             WHERE latitude IS NOT NULL
-            AND longitude IS NOT NULL
-            ORDER BY RANDOM()
-            LIMIT 70000
+              AND longitude IS NOT NULL
+            TABLESAMPLE SYSTEM (1)
+            LIMIT 20000
         """))
 
         return [dict(r._mapping) for r in result]
 
 
-# 📊 Biodiversity hotspots
+# 📊 Biodiversity hotspots (OK)
 @router.get("/hotspots")
 def biodiversity_hotspots():
     with engine.connect() as conn:
@@ -41,13 +41,13 @@ def biodiversity_hotspots():
             WHERE country IS NOT NULL
             GROUP BY country
             ORDER BY species_count DESC
-            LIMIT 2000
+            LIMIT 200
         """))
 
         return [dict(r._mapping) for r in result]
 
 
-# 🔎 Search species
+# 🔎 Search species (OK)
 @router.get("/search")
 def search_species(name: str):
     with engine.connect() as conn:
@@ -70,32 +70,15 @@ def search_species(name: str):
 
         return [dict(r._mapping) for r in result]
 
-# =================== total records ===================#
 
+# 📊 TOTAL RECORDS (FIXED)
 @router.get("/total-records")
 def get_biodiversity_total(db: Session = Depends(get_db)):
 
     result = db.execute(text("""
-        SELECT
-        (SELECT COUNT(*) FROM biodiversity_data) +
-        (SELECT COUNT(*) FROM marine_biodiversity)
+        SELECT COUNT(*) FROM marine_biodiversity
     """))
 
     total = result.scalar()
 
     return {"total": total}
-
-# =================== total effort =================== #
-
-@router.get("/total-effort")
-def total_fishing_effort(db: Session = Depends(get_db)):
-
-    result = db.execute(text("""
-        SELECT COALESCE(SUM(fishing_hours),0)
-        FROM fishing_effort
-        WHERE fishing_hours IS NOT NULL
-    """))
-
-    total = result.scalar()
-
-    return {"effort": total}
