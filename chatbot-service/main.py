@@ -24,7 +24,7 @@ app.add_middleware(
 # ======================================
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash-001")
+model = genai.GenerativeModel("models/gemini-pro")
 
 DATABASE_URL = os.getenv("DATABASE_URL")  # 👈 set in Render
 if not DATABASE_URL:
@@ -101,6 +101,8 @@ fish_capture("Country Name En", "2023 value")
 Return SQL only.
 """
     sql = ask_llm(prompt)
+    if "AI error" in sql:
+        return ""
     return clean_sql(sql)
 
 
@@ -124,7 +126,7 @@ def chat(request: ChatRequest):
 
             sql_query = generate_sql(question, history)
 
-            if "select" not in sql_query.lower():
+            if not sql_query or "select" not in sql_query.lower():
                 return {"error": "Invalid SQL", "query": sql_query}
 
             with engine.connect() as conn:
