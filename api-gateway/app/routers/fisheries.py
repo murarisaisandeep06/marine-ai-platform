@@ -176,10 +176,8 @@ def get_fisheries_total(db: Session = Depends(get_db)):
 
     result = db.execute(text("""
         SELECT
-        (SELECT COUNT(*) FROM fisheries_data) +
         (SELECT COUNT(*) FROM fish_capture) +
         (SELECT COUNT(*) FROM fish_species) +
-        (SELECT COUNT(*) FROM fishing_effort) +
         (SELECT COUNT(*) FROM noaa_landings)
     """))
 
@@ -210,7 +208,7 @@ def total_fishing_effort(db: Session = Depends(get_db)):
     result = db.execute(text("""
         SELECT COALESCE(SUM(fishing_hours),0)
         FROM fishing_effort
-        WHERE fishing_hours IS NOT NULL
+        TABLESAMPLE SYSTEM (0.5)
     """))
 
     total = result.scalar()
