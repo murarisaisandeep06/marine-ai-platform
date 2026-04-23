@@ -37,7 +37,7 @@ async def chat_proxy(request: Request):
         }
 
         response = requests.post(
-            "http://marine-chatbot:8001/chat",
+            "https://marine-chatbot.onrender.com/chat",
             json=chatbot_payload,
             timeout=10
         )
