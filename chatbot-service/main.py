@@ -24,7 +24,7 @@ app.add_middleware(
 # ======================================
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("gemini-1.5-flash-001")
 
 DATABASE_URL = os.getenv("DATABASE_URL")  # 👈 set in Render
 if not DATABASE_URL:
@@ -60,7 +60,17 @@ def ask_llm(prompt):
         return response.text if response.text else "No response generated."
     except Exception as e:
         return f"AI error: {str(e)}"
+        
+# ======================================
+# CLEAN SQL
+# ======================================
 
+def clean_sql(sql):
+    if not sql:
+        return ""
+
+    sql = sql.replace("```sql", "").replace("```", "").strip()
+    return sql.split("\n")[0]
 # ======================================
 # GENERATE SQL
 # ======================================
@@ -91,10 +101,8 @@ fish_capture("Country Name En", "2023 value")
 Return SQL only.
 """
     sql = ask_llm(prompt)
-    def clean_sql(sql):
-        sql = sql.replace("```sql", "").replace("```", "").strip()
-        return sql.split("\n")[0]
     return clean_sql(sql)
+
 
 # ======================================
 # CHAT ENDPOINT
