@@ -25,7 +25,9 @@ app.add_middleware(
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-DATABASE_URL = os.getenv("postgresql://marine_db_izkc_user:HpFDP4AhilJPztim36VmE4syrzp5sicD@dpg-d7fu1mdckfvc7384q85g-a.virginia-postgres.render.com/marine_db_izkc")  # 👈 set in Render
+DATABASE_URL = os.getenv("DATABASE_URL")  # 👈 set in Render
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL not set!")
 engine = create_engine(DATABASE_URL, connect_args={"sslmode": "require"})
 
 # ======================================
