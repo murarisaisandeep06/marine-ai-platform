@@ -13,8 +13,9 @@ function OceanQueryBox() {
     }
 
     try {
-      const res = await api.get("/ocean/", {
-        params: { lat, lon },
+      const res = await api.get("/ocean", {
+        params: { lat: parseFloat(lat),
+                  lon: parseFloat(lon) },
       });
 
       const data = res.data;
