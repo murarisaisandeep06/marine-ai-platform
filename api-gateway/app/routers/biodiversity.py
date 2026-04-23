@@ -22,8 +22,7 @@ def get_species():
             FROM marine_biodiversity
             WHERE latitude IS NOT NULL
               AND longitude IS NOT NULL
-            TABLESAMPLE SYSTEM (1)
-            LIMIT 20000
+            LIMIT 5000
         """))
 
         return [dict(r._mapping) for r in result]
