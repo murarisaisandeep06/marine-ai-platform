@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import requests
 from sqlalchemy import create_engine, text
+import openai
+import os
 
 # ======================================
 # APP INIT
@@ -19,17 +20,16 @@ app.add_middleware(
 )
 
 # ======================================
-# CONFIG
+# ENV CONFIG
 # ======================================
 
-OLLAMA_URL = "http://ollama:11434/api/generate"
-MODEL_NAME = "phi"
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-DATABASE_URL = "postgresql://marine:marine123@postgres:5432/marine_db"
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv("postgresql://marine_db_izkc_user:HpFDP4AhilJPztim36VmE4syrzp5sicD@dpg-d7fu1mdckfvc7384q85g-a.virginia-postgres.render.com/marine_db_izkc")  # 👈 set in Render
+engine = create_engine(DATABASE_URL, connect_args={"sslmode": "require"})
 
 # ======================================
-# SIMPLE IN-MEMORY SESSION MEMORY
+# MEMORY
 # ======================================
 
 conversation_memory = {}
@@ -40,29 +40,63 @@ def get_memory(session_id: str):
     return conversation_memory[session_id]
 
 # ======================================
-# LLM FUNCTION
-# ======================================
-
-def ask_llm(prompt):
-    payload = {
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"num_predict": 200}
-    }
-
-    response = requests.post(OLLAMA_URL, json=payload)
-    data = response.json()
-
-    return data.get("response", str(data))
-
-# ======================================
 # REQUEST MODEL
 # ======================================
 
 class ChatRequest(BaseModel):
     question: str
     session_id: str
+
+# ======================================
+# LLM FUNCTION
+# ======================================
+
+def ask_llm(prompt):
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a marine science AI assistant and SQL expert."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3
+    )
+    return response["choices"][0]["message"]["content"]
+
+# ======================================
+# GENERATE SQL
+# ======================================
+
+def generate_sql(question, history):
+    prompt = f"""
+You are a PostgreSQL expert.
+
+Conversation History:
+{history}
+
+User Question:
+{question}
+
+Rules:
+- Generate ONLY SQL
+- Use correct table names
+- Always include LIMIT 100
+- No explanation
+
+Tables:
+
+ocean_data(id, latitude, longitude, temperature, salinity, depth)
+marine_biodiversity(species, latitude, longitude, country)
+noaa_landings(species, pounds, dollars)
+fish_capture("Country Name En", "2023 value")
+
+Return SQL only.
+"""
+    sql = ask_llm(prompt)
+
+    sql = sql.replace("```sql", "").replace("```", "").strip()
+    sql = sql.split("\n")[0]
+
+    return sql
 
 # ======================================
 # CHAT ENDPOINT
@@ -72,129 +106,61 @@ class ChatRequest(BaseModel):
 def chat(request: ChatRequest):
     question = request.question.strip()
     session_id = request.session_id
+
     memory = get_memory(session_id)
+    history = "\n".join(memory[-5:])
 
-    # ----------------------------------
-    # SQL KEYWORD DETECTION
-    # ----------------------------------
+    try:
+        # Decide if DB needed
+        keywords = ["temperature", "depth", "species", "catch", "biodiversity", "data"]
 
-    keywords = [
-        "show", "list", "get", "data",
-        "temperature", "salinity", "depth",
-        "species", "catch", "region", "year"
-    ]
+        if any(k in question.lower() for k in keywords):
 
-    decision = "SQL" if any(word in question.lower() for word in keywords) else "GENERAL"
+            sql_query = generate_sql(question, history)
 
-    # ==================================
-    # SQL BRANCH
-    # ==================================
+            if "select" not in sql_query.lower():
+                return {"error": "Invalid SQL", "query": sql_query}
 
-    if decision == "SQL":
-
-        history_context = "\n".join(memory[-5:])
-
-        sql_prompt = f"""
-You are a PostgreSQL expert.
-
-Conversation History:
-{history_context}
-
-Current User Question:
-{question}
-
-STRICT RULES:
-- Always generate valid SQL.
-- Never output empty SELECT.
-- Always include table name.
-- If previous message mentioned a region like "Indian Ocean",
-  reuse that region context.
-- Always include LIMIT 100.
-- Output ONLY raw SQL.
-- No explanation.
-
-Tables:
-
-ocean_data(id, latitude, longitude, temperature, salinity, depth)
-fisheries_data(id, species, region, catch_volume, year)
-biodiversity_data(id, species_detected, region, confidence_score)
-"""
-
-        sql_query = ask_llm(sql_prompt)
-
-        # Clean SQL
-        sql_query = sql_query.strip()
-        sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
-        sql_query = sql_query.split("\n")[0]
-
-        # Ensure valid structure
-        if "select" not in sql_query.lower() or "from" not in sql_query.lower():
-            return {
-                "error": "Invalid SQL generated",
-                "generated_query": sql_query
-            }
-
-        if "limit" not in sql_query.lower():
-            sql_query = sql_query.rstrip(";") + " LIMIT 100;"
-
-        try:
             with engine.connect() as conn:
                 result = conn.execute(text(sql_query))
                 rows = result.fetchall()
 
-            explanation_prompt = f"""
-Conversation History:
-{history_context}
+            data = [dict(r._mapping) for r in rows]
 
+            # Explain results
+            explanation_prompt = f"""
 User Question:
 {question}
 
-Database Result:
-{rows}
+SQL Result:
+{data}
 
-Provide a short scientific explanation.
+Explain clearly in simple scientific terms.
 """
 
-            final_answer = ask_llm(explanation_prompt)
+            answer = ask_llm(explanation_prompt)
 
-            # Store memory
             memory.append(f"User: {question}")
-            memory.append(f"AI: {final_answer}")
+            memory.append(f"AI: {answer}")
 
             return {
                 "type": "SQL",
-                "generated_query": sql_query,
-                "result_count": len(rows),
-                "result": rows,
-                "answer": final_answer
+                "query": sql_query,
+                "data": data,
+                "answer": answer
             }
 
-        except Exception as e:
+        else:
+            # General AI
+            answer = ask_llm(question)
+
+            memory.append(f"User: {question}")
+            memory.append(f"AI: {answer}")
+
             return {
-                "error": str(e),
-                "generated_query": sql_query
+                "type": "GENERAL",
+                "answer": answer
             }
 
-    # ==================================
-    # GENERAL BRANCH
-    # ==================================
-
-    else:
-        history_context = "\n".join(memory[-5:])
-
-        prompt = f"""
-Conversation History:
-{history_context}
-
-User: {question}
-"""
-
-        answer = ask_llm(prompt)
-
-        memory.append(f"User: {question}")
-        memory.append(f"AI: {answer}")
-
-        return {
-            "type": "GENERAL",
-            "answer": answer
-        }
+    except Exception as e:
+        return {"error": str(e)}
