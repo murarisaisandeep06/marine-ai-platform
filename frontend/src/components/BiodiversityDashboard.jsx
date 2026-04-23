@@ -15,14 +15,16 @@ useEffect(()=>{
 
 fetch(`${API_URL}/biodiversity/biodiversity/hotspots`)
 .then(res=>res.json())
-.then(data=>setHotspots(data))
+.then(data=>setHotspots(data.slice(0,50)))
 
 fetch(`${API_URL}/biodiversity/biodiversity/species`)
 .then(res=>res.json())
 .then(data=>{
 
-setSpecies(data)
-setFiltered(data)
+const limited = data.slice(0, 5000);   // ✅ ADD THIS LINE
+
+setSpecies(limited)                    // ✅ CHANGE THIS
+setFiltered(limited)  
 
 const famCount = {}
 
@@ -129,7 +131,7 @@ style={{height:"550px",borderRadius:"10px"}}
 
 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
-{filtered.slice(0,1500).map((s,i)=>(
+{filtered.slice(0,500).map((s,i)=>(
 
 <CircleMarker
 key={i}
