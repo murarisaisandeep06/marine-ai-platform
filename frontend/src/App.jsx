@@ -49,10 +49,11 @@ useEffect(() => {
       setStats(res.data);
       setOceanCount(res.data.total_records);
     });
+  .catch(err => console.log("Stats error:", err));
 }, []);
 
 useEffect(() => {
-  api.get("/ocean/?min_lat=-40&max_lat=30&min_lon=20&max_lon=120&limit=5000")
+  api.get("/ocean?limit=5000")
     .then(res => setOceanData(res.data));
 }, []);
 
